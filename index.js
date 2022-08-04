@@ -19,8 +19,12 @@ app.enable('trust proxy');
 
 // ROUTES
 const userRoutes = require('./routes/user.routes');
+const billingsRoutes = require('./routes/billings.routes');
+
 
 app.use('/users', userRoutes);
+app.use('/billings', billingsRoutes);
+
 
 app.listen(8000, function () {
     console.log("Started application on port %d", 8000);
