@@ -107,7 +107,54 @@ const signup = async (req, res) => {
   }
 }
 
+const login = async (req, res) => {
+  let { username, password } = req.body
+
+  if (!username || !password) {
+    res.status(statusCodes.missingParameters).json({ message: "Missing parameters" });
+  }
+  else {
+    db.query(`SELECT email FROM users WHERE (username = ? AND password = ?);`, [username, password],
+      (err, rows) => {
+        if (err) res.status(statusCodes.queryError).json({
+          error: err
+        });
+        else {
+          if (rows[0]) {
+            let { email } = rows[0]
+
+            db.query(`SELECT firstname, lastname FROM contacts C INNER JOIN users U
+            ON C.email = U.email WHERE U.email = ?;`, email,
+              (err, rows) => {
+                if (err) res.status(statusCodes.queryError).json({
+                  error: err
+                });
+                else {
+                  if (rows[0]) {
+                    res.status(statusCodes.success).json({
+                      data: {
+                        username: username,
+                        firstname: rows[0].firstname,
+                        lastname: rows[0].lastname,
+                        email: email
+                      }
+                    });
+                  }
+                  else res.status(statusCodes.notFound).json({
+                    message: "Contact not found"
+                  });
+                }
+              });
+          }
+          else res.status(statusCodes.notFound).json({
+            message: "User not found"
+          });
+        }
+      });
+  }
+}
 
 module.exports = {
   signup,
+  login
 }
