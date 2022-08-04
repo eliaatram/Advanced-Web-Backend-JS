@@ -26,7 +26,7 @@ const checkMoviesFetching = (req) => {
       params.push(req.type);
     }
     if (req.release_date !== undefined) {
-      sql += ` AND movie_release_date >= ?`
+      sql += ` AND movie_release_date = ?`
       params.push(req.release_date);
     }
   }
