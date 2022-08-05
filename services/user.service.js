@@ -154,7 +154,75 @@ const login = async (req, res) => {
   }
 }
 
+const addMovieToSeen = async (req, res) => {
+  let { user_id, movie_title, movie_release_date } = req.body
+
+  if (!user_id || !movie_title || !movie_release_date) {
+    res.status(statusCodes.missingParameters).json({
+      message: "Missing parameters"
+    });
+  }
+  else {
+    db.query(`SELECT * FROM seen_movies WHERE (user_id = ? AND movie_title = ?
+      AND movie_release_date = ?);`, [user_id, movie_title, movie_release_date],
+      (err, rows) => {
+        if (err) res.status(statusCodes.queryError).json({
+          error: err
+        });
+        else {
+          if (rows[0]) {
+            res.status(statusCodes.fieldAlreadyExists).json({
+              message: "Movie already seen"
+            });
+          }
+          else {
+            db.query(`SELECT user_id FROM users WHERE user_id = ?;`, user_id,
+              (err, rows) => {
+                if (err) res.status(statusCodes.queryError).json({
+                  error: err
+                });
+                else {
+                  if (rows[0]) {
+                    db.query(`SELECT movie_id FROM movies WHERE (movie_title = ? AND movie_release_date =?);`,
+                      [movie_title, movie_release_date],
+                      (err, rows) => {
+                        if (err) res.status(statusCodes.queryError).json({
+                          error: err
+                        });
+                        else {
+                          if (rows[0]) {
+                            let date = new Date();
+                            req.body.date_seen = date.toISOString().slice(0, 10);
+
+                            db.query(`INSERT INTO seen_movies SET ?;`, req.body,
+                              (err, rows) => {
+                                if (err) res.status(statusCodes.queryError).json({
+                                  error: err
+                                });
+                                else res.status(statusCodes.success).json({
+                                  message: "Movie added to seen list"
+                                });
+                              });
+                          }
+                          else res.status(statusCodes.notFound).json({
+                            message: "Movie doesn't exist"
+                          });
+                        }
+                      });
+                  }
+                  else res.status(statusCodes.notFound).json({
+                    message: "User doesn't exist"
+                  });
+                }
+              });
+          }
+        }
+      });
+  }
+}
+
 module.exports = {
   signup,
-  login
+  login,
+  addMovieToSeen
 }
