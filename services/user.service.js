@@ -6,8 +6,8 @@ const signup = async (req, res) => {
   let body = req.body
 
   if (!body.firstname || !body.lastname || !body.dob || !body.gender || !body.country
-    || !body.area || !body.city || !body.street || !body.street_number || !body.username
-    || !body.password || !body.email || !body.phone_number) {
+    || !body.area || !body.city || !body.street || !body.street_number || !body.password
+    || !body.email || !body.phone_number) {
     res.status(statusCodes.missingParameters).json({
       message: "Missing parameters"
     });
@@ -41,49 +41,34 @@ const signup = async (req, res) => {
                         });
                       }
                       else {
-                        db.query(`SELECT username FROM users WHERE username = ?;`, body.username,
+                        db.query(`INSERT INTO billings (country, area, city, street, street_number)
+                                values (?,?,?,?,?);`, [body.country, body.area, body.city,
+                        body.street, body.street_number],
                           (err, rows) => {
                             if (err) res.status(statusCodes.queryError).json({
                               error: err
                             });
                             else {
-                              if (rows[0]) {
-                                res.status(statusCodes.fieldAlreadyExists).json({
-                                  message: "Username is taken"
-                                });
-                              }
-                              else {
-                                db.query(`INSERT INTO billings (country, area, city, street, street_number)
-                                values (?,?,?,?,?);`, [body.country, body.area, body.city,
-                                body.street, body.street_number],
-                                  (err, rows) => {
-                                    if (err) res.status(statusCodes.queryError).json({
-                                      error: err
-                                    });
-                                    else {
-                                      db.query(`INSERT INTO contacts (email, firstname, lastname, phone_number,
+                              db.query(`INSERT INTO contacts (email, firstname, lastname, phone_number,
                                         dob, gender, address_id) values (?,?,?,?,?,?,?);`, [body.email, body.firstname,
-                                      body.lastname, body.phone_number, body.dob, body.gender, rows.insertId],
-                                        (err, rows) => {
-                                          if (err) res.status(statusCodes.queryError).json({
-                                            error: err
-                                          });
-                                          else {
-                                            db.query(`INSERT INTO users (username, password, email, role_id)
-                                            values (?,?,?,?);`, [body.username, body.password, body.email, 1],
-                                              (err, rows) => {
-                                                if (err) res.status(statusCodes.queryError).json({
-                                                  error: err
-                                                });
-                                                else res.status(statusCodes.success).json({
-                                                  message: "Account created successfully"
-                                                });
-                                              });
-                                          }
-                                        });
-                                    }
+                              body.lastname, body.phone_number, body.dob, body.gender, rows.insertId],
+                                (err, rows) => {
+                                  if (err) res.status(statusCodes.queryError).json({
+                                    error: err
                                   });
-                              }
+                                  else {
+                                    db.query(`INSERT INTO users (email, password, role_id)
+                                            values (?,?,?,?);`, [body.email, body.password, 1],
+                                      (err, rows) => {
+                                        if (err) res.status(statusCodes.queryError).json({
+                                          error: err
+                                        });
+                                        else res.status(statusCodes.success).json({
+                                          message: "Account created successfully"
+                                        });
+                                      });
+                                  }
+                                });
                             }
                           });
                       }
@@ -108,20 +93,21 @@ const signup = async (req, res) => {
 }
 
 const login = async (req, res) => {
-  let { username, password } = req.body
+  let { email, password } = req.body
 
-  if (!username || !password) {
-    res.status(statusCodes.missingParameters).json({ message: "Missing parameters" });
+  if (!email || !password) {
+    res.status(statusCodes.missingParameters).json({
+      message: "Missing parameters"
+    });
   }
   else {
-    db.query(`SELECT email FROM users WHERE (username = ? AND password = ?);`, [username, password],
+    db.query(`SELECT user_id FROM users WHERE (email = ? AND password = ?);`, [email, password],
       (err, rows) => {
         if (err) res.status(statusCodes.queryError).json({
           error: err
         });
         else {
           if (rows[0]) {
-            let { email } = rows[0]
 
             db.query(`SELECT firstname, lastname FROM contacts C INNER JOIN users U
             ON C.email = U.email WHERE U.email = ?;`, email,
@@ -133,7 +119,6 @@ const login = async (req, res) => {
                   if (rows[0]) {
                     res.status(statusCodes.success).json({
                       data: {
-                        username: username,
                         firstname: rows[0].firstname,
                         lastname: rows[0].lastname,
                         email: email
