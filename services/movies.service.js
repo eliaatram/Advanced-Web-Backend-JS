@@ -18,16 +18,18 @@ const getMovies = async (req, res) => {
 }
 
 const addMovie = async (req, res) => {
-    let { movie_title, movie_release_date, movie_author, movie_type, movie_poster, video } = req.body
+    let { title, release_date, author, type, poster,
+        backdrop_poster, overview } = req.body
 
-    if (!movie_title || !movie_release_date || !movie_author || !movie_type || !movie_poster || !video) {
+    if (!title || !release_date || !author || !type || !poster || !backdrop_poster
+        || !overview) {
         res.status(statusCodes.missingParameters).json({
             message: "Missing parameters"
         });
     }
     else {
-        db.query(`SELECT movie_title FROM movies WHERE (movie_title = ? AND movie_release_date = ?);`,
-            [movie_title, movie_release_date],
+        db.query(`SELECT title FROM movies WHERE (title = ? AND release_date = ?);`,
+            [title, release_date],
             (err, rows) => {
                 if (err) res.status(statusCodes.queryError).json({
                     error: err
