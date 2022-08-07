@@ -1,5 +1,5 @@
 const statusCodes = require('../utils/constants/statusCodes');
-const db = require('../database');
+const db = require('../database/mysql');
 const { checkMoviesFetching } = require('../utils/helpers/utils');
 
 const getMovies = async (req, res) => {

@@ -1,5 +1,5 @@
 const statusCodes = require('../utils/constants/statusCodes');
-const db = require('../database');
+const db = require('../database/mysql');
 const { validateEmail, validatePhone } = require('../utils/helpers/utils');
 
 const signup = async (req, res) => {
