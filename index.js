@@ -10,6 +10,20 @@ const cors = require('./utils/helpers/cors')
 const dotenv = require('dotenv');
 dotenv.config();
 
+// SETUP MONGOOSE
+const mongoose = require('mongoose')
+
+const main = async () => {
+    try {
+        await mongoose.connect(`mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.hg9jp.mongodb.net/test`);
+        console.log('Connected to database')
+    } catch (error) {
+        console.log('Error connecting to db' + error)
+    }
+}
+
+main();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors);
