@@ -1,5 +1,4 @@
 const statusCodes = require('../utils/constants/statusCodes');
-const mongodb = require('../database/mongodb');
 const ratingModel = require('../models/ratingModel');
 
 const getMovieRating = async (req, res) => {
