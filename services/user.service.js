@@ -206,8 +206,41 @@ const addMovieToSeen = async (req, res) => {
   }
 }
 
+const getUserInfo = async (req, res) => {
+  let { id } = req.query
+
+  if (!id) {
+    res.status(statusCodes.missingParameters).json({
+      message: "ID is missing"
+    });
+  }
+  else {
+    await db.query(`SELECT firstname, lastname FROM users AS U
+    INNER JOIN contacts AS C ON U.email = C.email 
+    WHERE user_id = ?;`, id,
+      (err, rows) => {
+        if (err) res.status(statusCodes.queryError).json({
+          error: err
+        });
+        else {
+          if (rows[0]) {
+            res.status(statusCodes.success).json({
+              data: rows[0]
+            });
+          }
+          else {
+            res.status(statusCodes.notFound).json({
+              message: "User doesn't exist"
+            });
+          }
+        }
+      });
+  }
+}
+
 module.exports = {
   signup,
   login,
-  addMovieToSeen
+  addMovieToSeen,
+  getUserInfo
 }
