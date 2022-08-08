@@ -140,16 +140,16 @@ const login = async (req, res) => {
 }
 
 const addMovieToSeen = async (req, res) => {
-  let { user_id, movie_title, movie_release_date } = req.body
+  let { user_id, title, release_date } = req.body
 
-  if (!user_id || !movie_title || !movie_release_date) {
+  if (!user_id || !title || !release_date) {
     res.status(statusCodes.missingParameters).json({
       message: "Missing parameters"
     });
   }
   else {
-    db.query(`SELECT * FROM seen_movies WHERE (user_id = ? AND movie_title = ?
-      AND movie_release_date = ?);`, [user_id, movie_title, movie_release_date],
+    db.query(`SELECT * FROM seen_movies WHERE (user_id = ? AND title = ?
+      AND release_date = ?);`, [user_id, title, release_date],
       (err, rows) => {
         if (err) res.status(statusCodes.queryError).json({
           error: err
@@ -168,8 +168,8 @@ const addMovieToSeen = async (req, res) => {
                 });
                 else {
                   if (rows[0]) {
-                    db.query(`SELECT movie_id FROM movies WHERE (movie_title = ? AND movie_release_date =?);`,
-                      [movie_title, movie_release_date],
+                    db.query(`SELECT movie_id FROM movies WHERE (title = ? AND release_date =?);`,
+                      [title, release_date],
                       (err, rows) => {
                         if (err) res.status(statusCodes.queryError).json({
                           error: err
@@ -238,9 +238,73 @@ const getUserInfo = async (req, res) => {
   }
 }
 
+const getUserMovies = async (req, res) => {
+  let { id, type } = req.query
+
+  if (!id) {
+    res.status(statusCodes.missingParameters).json({
+      message: "Missing parameters"
+    });
+  }
+  else {
+    let sql = `SELECT S.title, S.release_date, date_seen, author, type, poster, backdrop_poster
+    FROM seen_movies AS S INNER JOIN movies AS M ON (S.title = M.title AND S.release_date = M.release_date)
+    WHERE user_id = ? `
+
+    if (type) {
+      sql += 'AND type = ?;'
+    }
+    else {
+      sql += ';'
+    }
+
+    db.query(`SELECT user_id FROM users WHERE user_id = ?;`, id,
+      (err, rows) => {
+        if (err) res.status(statusCodes.queryError).json({
+          error: err
+        });
+        else {
+          if (rows[0]) {
+            db.query(sql, [id, type],
+              (err, rows) => {
+                if (err) res.status(statusCodes.queryError).json({
+                  error: err
+                });
+                else {
+                  if (rows[0]) {
+                    res.status(statusCodes.success).json({
+                      data: rows
+                    });
+                  }
+                  else {
+                    if (type) {
+                      res.status(statusCodes.notFound).json({
+                        message: "No seen movies by user for selected type"
+                      });
+                    }
+                    else {
+                      res.status(statusCodes.notFound).json({
+                        message: "No seen movies by user"
+                      });
+                    }
+                  }
+                }
+              });
+          }
+          else {
+            res.status(statusCodes.notFound).json({
+              message: "User doesn't exist"
+            });
+          }
+        }
+      });
+  }
+}
+
 module.exports = {
   signup,
   login,
   addMovieToSeen,
-  getUserInfo
+  getUserInfo,
+  getUserMovies
 }
