@@ -58,13 +58,16 @@ const signup = async (req, res) => {
                                   });
                                   else {
                                     db.query(`INSERT INTO users (email, password, role_id)
-                                            values (?,?,?,?);`, [body.email, body.password, 1],
+                                            values (?,?,?);`, [body.email, body.password, 1],
                                       (err, rows) => {
                                         if (err) res.status(statusCodes.queryError).json({
                                           error: err
                                         });
                                         else res.status(statusCodes.success).json({
-                                          message: "Account created successfully"
+                                          message: "Account created successfully",
+                                          data: {
+                                            id: rows.insertId,
+                                          }
                                         });
                                       });
                                   }
@@ -108,7 +111,7 @@ const login = async (req, res) => {
         });
         else {
           if (rows[0]) {
-
+            let id = rows[0].user_id
             db.query(`SELECT firstname, lastname FROM contacts C INNER JOIN users U
             ON C.email = U.email WHERE U.email = ?;`, email,
               (err, rows) => {
@@ -119,6 +122,7 @@ const login = async (req, res) => {
                   if (rows[0]) {
                     res.status(statusCodes.success).json({
                       data: {
+                        id: id,
                         firstname: rows[0].firstname,
                         lastname: rows[0].lastname,
                         email: email
