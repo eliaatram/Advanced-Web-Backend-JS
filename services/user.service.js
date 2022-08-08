@@ -247,7 +247,7 @@ const getUserMovies = async (req, res) => {
     });
   }
   else {
-    let sql = `SELECT S.title, S.release_date, date_seen, author, type, poster, backdrop_poster
+    let sql = `SELECT movie_id, S.title, S.release_date, date_seen, author, type, poster, backdrop_poster
     FROM seen_movies AS S INNER JOIN movies AS M ON (S.title = M.title AND S.release_date = M.release_date)
     WHERE user_id = ? `
 
