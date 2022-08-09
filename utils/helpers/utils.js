@@ -10,9 +10,13 @@ const checkMoviesFetching = (req) => {
 
   let params = []
 
-  if (req.title || req.author || req.type || req.release_date) {
+  if (req.id || req.title || req.author || req.type || req.release_date) {
     sql += 'WHERE TRUE'
 
+    if (req.id !== undefined) {
+      sql += ` AND movie_id = ?`
+      params.push(req.id);
+    }
     if (req.title !== undefined) {
       sql += ` AND title = ?`
       params.push(req.title);
