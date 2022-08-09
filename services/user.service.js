@@ -1,5 +1,5 @@
 const statusCodes = require('../utils/constants/statusCodes');
-const db = require('../database');
+const db = require('../database/mysql');
 const { validateEmail, validatePhone } = require('../utils/helpers/utils');
 
 const signup = async (req, res) => {
@@ -58,13 +58,19 @@ const signup = async (req, res) => {
                                   });
                                   else {
                                     db.query(`INSERT INTO users (email, password, role_id)
-                                            values (?,?,?,?);`, [body.email, body.password, 1],
+                                            values (?,?,?);`, [body.email, body.password, 1],
                                       (err, rows) => {
                                         if (err) res.status(statusCodes.queryError).json({
                                           error: err
                                         });
                                         else res.status(statusCodes.success).json({
-                                          message: "Account created successfully"
+                                          message: "Account created successfully",
+                                          data: {
+                                            id: rows.insertId,
+                                            firstname: body.firstname,
+                                            lastname: body.lastname,
+                                            email: body.email
+                                          }
                                         });
                                       });
                                   }
@@ -108,7 +114,7 @@ const login = async (req, res) => {
         });
         else {
           if (rows[0]) {
-
+            let id = rows[0].user_id
             db.query(`SELECT firstname, lastname FROM contacts C INNER JOIN users U
             ON C.email = U.email WHERE U.email = ?;`, email,
               (err, rows) => {
@@ -119,6 +125,7 @@ const login = async (req, res) => {
                   if (rows[0]) {
                     res.status(statusCodes.success).json({
                       data: {
+                        id: id,
                         firstname: rows[0].firstname,
                         lastname: rows[0].lastname,
                         email: email
@@ -140,16 +147,16 @@ const login = async (req, res) => {
 }
 
 const addMovieToSeen = async (req, res) => {
-  let { user_id, movie_title, movie_release_date } = req.body
+  let { user_id, title, release_date } = req.body
 
-  if (!user_id || !movie_title || !movie_release_date) {
+  if (!user_id || !title || !release_date) {
     res.status(statusCodes.missingParameters).json({
       message: "Missing parameters"
     });
   }
   else {
-    db.query(`SELECT * FROM seen_movies WHERE (user_id = ? AND movie_title = ?
-      AND movie_release_date = ?);`, [user_id, movie_title, movie_release_date],
+    db.query(`SELECT * FROM seen_movies WHERE (user_id = ? AND title = ?
+      AND release_date = ?);`, [user_id, title, release_date],
       (err, rows) => {
         if (err) res.status(statusCodes.queryError).json({
           error: err
@@ -168,8 +175,8 @@ const addMovieToSeen = async (req, res) => {
                 });
                 else {
                   if (rows[0]) {
-                    db.query(`SELECT movie_id FROM movies WHERE (movie_title = ? AND movie_release_date =?);`,
-                      [movie_title, movie_release_date],
+                    db.query(`SELECT movie_id FROM movies WHERE (title = ? AND release_date =?);`,
+                      [title, release_date],
                       (err, rows) => {
                         if (err) res.status(statusCodes.queryError).json({
                           error: err
@@ -206,8 +213,105 @@ const addMovieToSeen = async (req, res) => {
   }
 }
 
+const getUserInfo = async (req, res) => {
+  let { id } = req.query
+
+  if (!id) {
+    res.status(statusCodes.missingParameters).json({
+      message: "ID is missing"
+    });
+  }
+  else {
+    await db.query(`SELECT firstname, lastname FROM users AS U
+    INNER JOIN contacts AS C ON U.email = C.email 
+    WHERE user_id = ?;`, id,
+      (err, rows) => {
+        if (err) res.status(statusCodes.queryError).json({
+          error: err
+        });
+        else {
+          if (rows[0]) {
+            res.status(statusCodes.success).json({
+              data: rows[0]
+            });
+          }
+          else {
+            res.status(statusCodes.notFound).json({
+              message: "User doesn't exist"
+            });
+          }
+        }
+      });
+  }
+}
+
+const getUserMovies = async (req, res) => {
+  let { id, type } = req.query
+
+  if (!id) {
+    res.status(statusCodes.missingParameters).json({
+      message: "Missing parameters"
+    });
+  }
+  else {
+    let sql = `SELECT movie_id, S.title, S.release_date, date_seen, author, type, poster, backdrop_poster
+    FROM seen_movies AS S INNER JOIN movies AS M ON (S.title = M.title AND S.release_date = M.release_date)
+    WHERE user_id = ? `
+
+    if (type) {
+      sql += 'AND type = ?;'
+    }
+    else {
+      sql += ';'
+    }
+
+    db.query(`SELECT user_id FROM users WHERE user_id = ?;`, id,
+      (err, rows) => {
+        if (err) res.status(statusCodes.queryError).json({
+          error: err
+        });
+        else {
+          if (rows[0]) {
+            db.query(sql, [id, type],
+              (err, rows) => {
+                if (err) res.status(statusCodes.queryError).json({
+                  error: err
+                });
+                else {
+                  if (rows[0]) {
+                    res.status(statusCodes.success).json({
+                      data: rows
+                    });
+                  }
+                  else {
+                    if (type) {
+                      res.status(statusCodes.notFound).json({
+                        message: "No seen movies by user for selected type"
+                      });
+                    }
+                    else {
+                      res.status(statusCodes.notFound).json({
+                        message: "No seen movies by user"
+                      });
+                    }
+                  }
+                }
+              });
+          }
+          else {
+            res.status(statusCodes.notFound).json({
+              message: "User doesn't exist"
+            });
+          }
+        }
+      });
+  }
+}
+
 module.exports = {
   signup,
   login,
-  addMovieToSeen
+  addMovieToSeen,
+  getUserInfo,
+  getUserMovies
 }

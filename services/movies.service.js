@@ -1,5 +1,5 @@
 const statusCodes = require('../utils/constants/statusCodes');
-const db = require('../database');
+const db = require('../database/mysql');
 const { checkMoviesFetching } = require('../utils/helpers/utils');
 
 const getMovies = async (req, res) => {
@@ -18,16 +18,18 @@ const getMovies = async (req, res) => {
 }
 
 const addMovie = async (req, res) => {
-    let { movie_title, movie_release_date, movie_author, movie_type, movie_poster, video } = req.body
+    let { title, release_date, author, type, poster,
+        backdrop_poster, overview } = req.body
 
-    if (!movie_title || !movie_release_date || !movie_author || !movie_type || !movie_poster || !video) {
+    if (!title || !release_date || !author || !type || !poster || !backdrop_poster
+        || !overview) {
         res.status(statusCodes.missingParameters).json({
             message: "Missing parameters"
         });
     }
     else {
-        db.query(`SELECT movie_title FROM movies WHERE (movie_title = ? AND movie_release_date = ?);`,
-            [movie_title, movie_release_date],
+        db.query(`SELECT title FROM movies WHERE (title = ? AND release_date = ?);`,
+            [title, release_date],
             (err, rows) => {
                 if (err) res.status(statusCodes.queryError).json({
                     error: err
@@ -54,7 +56,39 @@ const addMovie = async (req, res) => {
     }
 }
 
+const getMostSeen = async (req, res) => {
+    let { type } = req.query
+
+    let sql = `SELECT movie_id, S.title, S.release_date, author, type, poster, backdrop_poster, count(S.title) as times_seen
+    FROM seen_movies AS S INNER JOIN movies AS M on (S.title = M.title AND S.release_date = M.release_date)`
+
+    if (type) {
+        sql += ' WHERE M.type = ?'
+    }
+
+    sql += ' GROUP BY S.title, S.release_date ORDER BY times_seen desc LIMIT 10;'
+    db.query(sql, type,
+        (err, rows) => {
+            if (err) res.status(statusCodes.queryError).json({
+                error: err
+            });
+            else {
+                if (rows[0]) {
+                    res.status(statusCodes.success).json({
+                        data: rows
+                    });
+                }
+                else {
+                    res.status(statusCodes.notFound).json({
+                        message: "No movies found"
+                    });
+                }
+            }
+        });
+}
+
 module.exports = {
     getMovies,
-    addMovie
+    addMovie,
+    getMostSeen
 }

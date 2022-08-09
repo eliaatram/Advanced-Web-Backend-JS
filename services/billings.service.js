@@ -1,5 +1,5 @@
 const statusCodes = require('../utils/constants/statusCodes');
-const db = require('../database');
+const db = require('../database/mysql');
 const { checkBillingsFetching } = require('../utils/helpers/utils');
 
 const getBillings = async (req, res) => {

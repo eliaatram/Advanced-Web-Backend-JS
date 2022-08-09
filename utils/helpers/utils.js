@@ -14,24 +14,24 @@ const checkMoviesFetching = (req) => {
     sql += 'WHERE TRUE'
 
     if (req.title !== undefined) {
-      sql += ` AND movie_title = ?`
+      sql += ` AND title = ?`
       params.push(req.title);
     }
     if (req.author !== undefined) {
-      sql += ` AND movie_author = ?`
+      sql += ` AND author = ?`
       params.push(req.author);
     }
     if (req.type !== undefined) {
-      sql += ` AND movie_type = ?`
+      sql += ` AND type = ?`
       params.push(req.type);
     }
     if (req.release_date !== undefined) {
-      sql += ` AND movie_release_date = ?`
+      sql += ` AND release_date = ?`
       params.push(req.release_date);
     }
   }
 
-  sql += ' ORDER BY movie_release_date DESC;'
+  sql += ' ORDER BY release_date DESC;'
   return { sql, params }
 }
 
@@ -42,28 +42,28 @@ const checkBillingsFetching = (req) => {
   let params = []
 
   if (req.country || req.area || req.city || req.street || req.street_number) {
-      sql += 'WHERE TRUE'
+    sql += 'WHERE TRUE'
 
-      if (req.country !== undefined) {
-          sql += ` AND country = ?`
-          params.push(req.country);
-      }
-      if (req.area !== undefined) {
-          sql += ` AND area = ?`
-          params.push(req.area);
-      }
-      if (req.city !== undefined) {
-          sql += ` AND city = ?`
-          params.push(req.city);
-      }
-      if (req.street !== undefined) {
-          sql += ` AND street = ?`
-          params.push(req.street);
-      }
-      if (req.street_number !== undefined) {
-          sql += ` AND street_number = ?`
-          params.push(req.street_number);
-      }
+    if (req.country !== undefined) {
+      sql += ` AND country = ?`
+      params.push(req.country);
+    }
+    if (req.area !== undefined) {
+      sql += ` AND area = ?`
+      params.push(req.area);
+    }
+    if (req.city !== undefined) {
+      sql += ` AND city = ?`
+      params.push(req.city);
+    }
+    if (req.street !== undefined) {
+      sql += ` AND street = ?`
+      params.push(req.street);
+    }
+    if (req.street_number !== undefined) {
+      sql += ` AND street_number = ?`
+      params.push(req.street_number);
+    }
   }
 
   sql += ';'
