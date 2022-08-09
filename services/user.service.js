@@ -67,9 +67,9 @@ const signup = async (req, res) => {
                                           message: "Account created successfully",
                                           data: {
                                             id: rows.insertId,
-                                            firstname: firstname,
-                                            lastname: lastname,
-                                            email: email
+                                            firstname: body.firstname,
+                                            lastname: body.lastname,
+                                            email: body.email
                                           }
                                         });
                                       });

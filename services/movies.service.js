@@ -56,7 +56,39 @@ const addMovie = async (req, res) => {
     }
 }
 
+const getMostSeen = async (req, res) => {
+    let { type } = req.query
+
+    let sql = `SELECT movie_id, S.title, S.release_date, author, type, poster, backdrop_poster, count(S.title) as times_seen
+    FROM seen_movies AS S INNER JOIN movies AS M on (S.title = M.title AND S.release_date = M.release_date)`
+
+    if (type) {
+        sql += ' WHERE M.type = ?'
+    }
+
+    sql += ' GROUP BY S.title, S.release_date ORDER BY times_seen desc LIMIT 10;'
+    db.query(sql, type,
+        (err, rows) => {
+            if (err) res.status(statusCodes.queryError).json({
+                error: err
+            });
+            else {
+                if (rows[0]) {
+                    res.status(statusCodes.success).json({
+                        data: rows
+                    });
+                }
+                else {
+                    res.status(statusCodes.notFound).json({
+                        message: "No movies found"
+                    });
+                }
+            }
+        });
+}
+
 module.exports = {
     getMovies,
-    addMovie
+    addMovie,
+    getMostSeen
 }
